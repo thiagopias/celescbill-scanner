@@ -66,8 +66,20 @@ class CelescPdfReader:
             return valor_float
         return None        
 
-    def get_celesc_leitura_atual(this) -> int:
-        return 0
+    def get_celesc_data_leitura_anterior(this) -> datetime:
+        searchString = "Data da leitura anterior:"
+        df = this.df.loc[this.df[0].str.contains(searchString)]
+        if len(df) > 0:
+            #exemplo string encontrada no indice 17.	Data da leitura anterior: 19/07/2023
+            data_index = df.index.values[0]
+            newDf = this.df[this.df.index == data_index]
+            date_string = newDf.values[0][0]
+            date_string = date_string.split(":")[1].strip()
+            date_object = datetime.strptime(date_string, '%d/%m/%Y').date()
+            return date_object
+        
+        return None
+        
 
 
 
