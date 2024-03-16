@@ -39,7 +39,35 @@ class CelescPdfReader:
             return date_object
         
         return None
+    
 
+    def get_data_vencimento(this) -> datetime:
+        searchString = "VENCIMENTO"
+        df = this.df.loc[this.df[0].str.contains(searchString)]
+        if len(df) > 0:
+            # string encontrada no indice 58:	41054204VENCIMENTO
+            #pega o valor da data de vencimento na proxima linha, 58 + 1 = 59
+            data_vencimento_index = df.index.values[0] + 1
+            newDf = this.df[this.df.index == data_vencimento_index]
+            date_string = newDf.values[0][0]
+            date_object = datetime.strptime(date_string, '%d/%m/%Y').date()
+            return date_object
+        
+        return None
+
+    def get_valor_fatura(this) -> float:
+        searchString = "VALOR ATÉ O VENCIMENTO"
+        df = this.df.loc[this.df[0].str.contains(searchString)]
+        if len(df) > 0:
+            index_valor = df.index.values[0] + 1
+            valor_string = this.df[this.df.index == index_valor][0].values[0].split(" ")[1]
+            valor_string = valor_string.replace(",",".")
+            valor_float = float(valor_string)
+            return valor_float
+        return None        
+
+    def get_celesc_leitura_atual(this) -> int:
+        return 0
 
 
 
