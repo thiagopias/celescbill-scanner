@@ -1,0 +1,10 @@
+# Ignore all PDF files
+*.pdf
+# Ignore all jpg files
+*.jpg
+
+# Ignore all mp4 files
+*.mp4
+
+# Ignore all HEIC files
+*.HEIC
