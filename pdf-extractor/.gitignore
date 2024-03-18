@@ -8,3 +8,6 @@
 
 # Ignore all HEIC files
 *.HEIC
+
+# Ignore all ZIP files
+*.zip
