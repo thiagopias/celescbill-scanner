@@ -1,33 +1,36 @@
-import PyPDF2
 import pandas as pd
 from datetime import datetime
+from PDFServiceApi import TextExtractor
 
 #show full lines and columns when visualizing the dataframe
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_colwidth', None)
 
-
-
-
 class CelescPdfReader:
+    
     def __init__(this, pdfFileName: str ):
-        reader = PyPDF2.PdfReader(pdfFileName)
-        page = reader.pages[0]
-        txt = page.extract_text()
-        lista = txt.split('\n')
-        this.df = pd.DataFrame(lista)
-        this.readerControl = 0
+        this.input_pdf = pdfFileName
+        te = TextExtractor(this.input_pdf)
+        #te.run_extraction_process()
+        #te.extract_as_json_file()
+        this.df = te.extract_as_pandas_dataframe()
 
-    def setDataFrame(this, dataframe: pd.DataFrame):
-        this.df = dataframe
-        
+        print(this.df)
+        this.readerControl = 0
+    
     def isCelesc(this) -> bool:
         df = this.df.loc[this.df[0].str.contains("Celesc Distribuicao S.A")]
         if len(df) > 0:
             return True
         return False
     
+    def load_from_json(this):
+        pass
+
+    def setDataFrame(this, dataframe: pd.DataFrame):
+        this.df = dataframe
+        
 
     def print(this):
         print(this.df)
@@ -39,23 +42,19 @@ class CelescPdfReader:
         if len(index) > 0:
             line = index.values[0][0]
             date_string = line.split(":")[1].split(" ")[1] #'18/08/2023'
-            date_object = datetime.strptime(date_string, '%d/%m/%Y').date()
-            return date_object
-        
+            return Conversor.convert_string_to_date(date_string)
         return None
     
 
     def get_data_vencimento(this) -> datetime:
-        searchString = "VENCIMENTO"
+        searchString = "VENCIMENTO:"
         df = this.df.loc[this.df[0].str.contains(searchString)]
         if len(df) > 0:
             # string encontrada no indice 58:	41054204VENCIMENTO
             #pega o valor da data de vencimento na proxima linha, 58 + 1 = 59
             data_vencimento_index = df.index.values[0] + 1
             newDf = this.df[this.df.index == data_vencimento_index]
-            date_string = newDf.values[0][0]
-            date_object = datetime.strptime(date_string, '%d/%m/%Y').date()
-            return date_object
+            return Conversor.convert_string_to_date(newDf.values[0][0])
         
         return None
 
@@ -63,12 +62,10 @@ class CelescPdfReader:
         searchString = "VALOR ATÉ O VENCIMENTO"
         df = this.df.loc[this.df[0].str.contains(searchString)]
         if len(df) > 0:
-            index_valor = df.index.values[0] + 1
-            valor_string = this.df[this.df.index == index_valor][0].values[0].split(" ")[1]
-            valor_string = valor_string.replace(",",".")
-            valor_float = float(valor_string)
-            return valor_float
-        return None        
+            values = df.values[0][0].split(" ")
+            valor_string = values[-2]
+            return Conversor.convert_string_to_float(valor_string)
+        return 0        
 
     
     
@@ -79,7 +76,8 @@ class CelescPdfReader:
     def get_celesc_data_leitura_anterior(this) -> datetime:
         searchString = "Data da leitura anterior:"
         df = this.df.loc[this.df[0].str.contains(searchString)]
-        return ParserMedicao.get_value(df, 'date')
+        df = this.df[ this.df[0].index == (df.index.values[0]+1) ]
+        return Conversor.convert_string_to_date(df.values[0][0])
         
     def get_celesc_leitura_anterior(this) -> int:
         searchString = "Leitura anterior:"
@@ -110,42 +108,45 @@ class CelescPdfReader:
 
 
     def get_celesc_consumo_tus(this) -> float:
-        '''
-        searchString = "Consumo Tusd"
-        df = this.df.loc[this.df[0].str.contains(searchString)]
-        #print(df)
-        tus = this.df[this.df.index == df.index.values[1] + 25 + this.readerControl]
-        tus = tus.values[0][0][-5:]
-        valor_float = float(tus.replace(",","."))
-        return valor_float
-        '''
+        
+        #try:
+            searchString = "Consumo Tusd"
+            df = this.df.loc[this.df[0].str.contains(searchString)]
+            #print(df)
+            tus = this.df[this.df.index == df.index.values[0] + 3 + this.readerControl]
+            tus = tus.values[0][0]
+            return Conversor.convert_string_to_float(tus)
+            
+        #except(Exception) as e :
+        #   print('Error get_celesc_consumo_tus', e. )    
+        #   return -1
+        #    return 0
 
         
     def get_celesc_consumo_tus2(this) -> float:
         searchString = "Consumo Tusd"
         df = this.df.loc[this.df[0].str.contains(searchString)]
         #print(df)
-        tus = this.df[this.df.index == df.index.values[1] + 26 + this.readerControl]
+        tus = this.df[this.df.index == df.index.values[1] + 3 + this.readerControl]
         tus = tus.values[0][0]
-        valor_float = float(tus.replace(",","."))
-        return valor_float
-    
+        return Conversor.convert_string_to_float(tus)
+            
+        
     def get_celesc_consumo_te(this) -> float:
         searchString = "Consumo Te"
         df = this.df.loc[this.df[0].str.contains(searchString)]
         #print(df)
-        te = this.df[this.df.index == df.index.values[0] + 26 + this.readerControl]
+        te = this.df[this.df.index == df.index.values[0] + 3 + this.readerControl]
         te = te.values[0][0]
-        te = te.replace(",",".")
         
-        valor_float = float(te)
+        return Conversor.convert_string_to_float(te)
         return valor_float
     
     def get_celesc_consumo_te2(this) -> float:
         searchString = "Consumo Te"
         df = this.df.loc[this.df[0].str.contains(searchString)]
         #print(df)
-        te = this.df[this.df.index == df.index.values[0] + 27 + this.readerControl]
+        te = this.df[this.df.index == df.index.values[1] + 3 + this.readerControl]
         te = te.values[0][0]
         te = te.replace(",",".")
         valor_float = float(te)
@@ -156,7 +157,7 @@ class CelescPdfReader:
         df = this.df.loc[this.df[0].str.contains(searchString)]
         #print(df)
         
-        te = this.df[this.df.index == df.index.values[0] + 26 + this.readerControl ]
+        te = this.df[this.df.index == df.index.values[0] + 3 + this.readerControl ]
         #te = this.df[this.df.index == df.index.values[0] + 21 ]
         
         te = te.values[0][0]
@@ -168,7 +169,7 @@ class CelescPdfReader:
         searchString = "Energia Injetada Tusd"
         df = this.df.loc[this.df[0].str.contains(searchString)]
         #print(df)
-        te = this.df[this.df.index == df.index.values[0] + 27 + this.readerControl]
+        te = this.df[this.df.index == df.index.values[1] + 3 + this.readerControl]
         te = te.values[0][0]
         te = te.replace(",",".")
         valor_float = float(te)
@@ -177,7 +178,7 @@ class CelescPdfReader:
     def get_celesc_energia_injetada_te(this) -> float:
         searchString = "Energia Injetada Te"
         df = this.df.loc[this.df[0].str.contains(searchString)]
-        te = this.df[this.df.index == df.index.values[0] + 26 + this.readerControl]
+        te = this.df[this.df.index == df.index.values[0] + 3 + this.readerControl]
         te = te.values[0][0]
         te = te.replace(",",".")
         valor_float = float(te)
@@ -186,7 +187,7 @@ class CelescPdfReader:
     def get_celesc_energia_injetada_te2(this) -> float:
         searchString = "Energia Injetada Te"
         df = this.df.loc[this.df[0].str.contains(searchString)]
-        te = this.df[this.df.index == df.index.values[0] + 27 + this.readerControl ]
+        te = this.df[this.df.index == df.index.values[1] + 3 + this.readerControl ]
         te = te.values[0][0]
         te = te.replace(",",".")
         valor_float = float(te)
@@ -195,12 +196,20 @@ class CelescPdfReader:
     
     
     def get_celesc_energia_injetada_subtotal(this) -> float:
-        searchString = "Soma Demonstr."
+        searchString = "Subtotal"
         df = this.df.loc[this.df[0].str.contains(searchString)]
         #te = this.df[this.df.index == df.index.values[0] + 49 + this.readerControl ]
         #te = this.df[this.df.index == df.index.values[0] + 41 + this.readerControl ]
-        te = this.df[this.df.index == df.index.values[0] + 1 + this.readerControl ]
+        te = this.df[this.df.index == df.index.values[0] + 0 + this.readerControl ]
         te = te.values[0][0]
+        teList = te.split(" ")
+        if len(teList) > 3:
+            #valor esta na mesma linha
+            te = teList[2]
+        else: 
+            te = this.df[this.df.index == df.index.values[0] + 1 + this.readerControl ]
+            te = te.values[0][0]
+            
         #print('te', te)
         te = te.replace(",",".")
         
@@ -212,23 +221,48 @@ class CelescPdfReader:
             return 0
         
     def get_celesc_lancamentos_e_servicos_subtotal(this) -> float:
-        searchString = "Composição do Preço"
+        searchString = "Subtotal"
         df = this.df.loc[this.df[0].str.contains(searchString)]
-        #te = this.df[this.df.index == df.index.values[0] + 41 + this.messagesLenght ]
-        te = this.df[this.df.index == df.index.values[0] -1 + this.readerControl ]
+        te = this.df[this.df.index == df.index.values[1] + 1 + this.readerControl ]
         te = te.values[0][0]
-        #print('te',te)
+        #print('te', te)
         te = te.replace(",",".")
+        
         try:
             valor_float = float(te)
             return valor_float
         except:
-            print('error converting ',te,' to float') 
+            print('error converting ',te,' to float')
             return 0
     
 
+
+
+class Conversor():
+    @staticmethod
+    def convert_string_to_date(string_to_convert: str):
+        date_string = string_to_convert
+        #print('converting str to date ',date_string)
+        try : 
+            return datetime.strptime(date_string.strip(), '%d/%m/%Y').date()
+        except :
+            print('Error converting string to date ',string_to_convert)
+        
+        return None
+    
+    def convert_string_to_float(string_to_convert: str):
+        try : 
+            valor_string = string_to_convert.replace(",",".")
+            valor_float = float(valor_string)
+            return valor_float
+        except: 
+            print('Error converting string to float ',string_to_convert)    
+        return None
+
+
 class ParserMedicao():
     @staticmethod
+
     def get_value(data_frame: pd.DataFrame, return_type: str):
         df = data_frame
         if return_type == 'date':

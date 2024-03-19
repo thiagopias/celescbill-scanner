@@ -2,7 +2,8 @@ from CelescPdfReader import CelescPdfReader
 
 #celesc = CelescPdfReader("celesc-2023-09-02.pdf")
 #celesc = CelescPdfReader("celesc-2023-10-02.pdf")
-celesc = CelescPdfReader("celesc-2023-11-02.pdf")
+celesc = CelescPdfReader("../resources/celesc-2023-11-02.pdf")
+
 #celesc = CelescPdfReader("celesc-2023-12-02.pdf")
 #celesc = CelescPdfReader("celesc-2024-01-02.pdf")
 
