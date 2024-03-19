@@ -16,7 +16,7 @@ class CelescPdfReader:
         #te.extract_as_json_file()
         this.df = te.extract_as_pandas_dataframe()
 
-        print(this.df)
+        #print(this.df)
         this.readerControl = 0
     
     def isCelesc(this) -> bool:
