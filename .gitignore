@@ -13,7 +13,7 @@
 *.zip
 
 # Ignore all Folder and subfolders and all files under PDFServicesSDK-Python (Extract, Auto-Tag)Samples
-./PDFServicesSDK-Python (Extract, Auto-Tag)Samples/
+PDFServicesSDK-Python (Extract, Auto-Tag)Samples/
 
 # Ignore virtual environment
-venv/
+.venv/
