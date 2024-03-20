@@ -9,6 +9,7 @@ import time
 #celesc = CelescPdfReader("celesc-2024-03-02.pdf")
 
 def runTests():
+    '''
     files = ["celesc-2023-09-02.pdf",
      "celesc-2023-10-02.pdf",
      "celesc-2023-11-02.pdf",
@@ -18,6 +19,9 @@ def runTests():
      "celesc-2024-03-02.pdf",
      "celesc-2024-04-02.pdf"
      ]
+     '''
+    files = ["celesc-2024-04-02.pdf"]
+     
     for i in files:
         print('running test for file: '+i)
         time.sleep(5)
